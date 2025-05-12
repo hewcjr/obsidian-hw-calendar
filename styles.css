@@ -1,0 +1,438 @@
+/* @settings
+
+name: Calendar Plugin
+id: calendar-plugin
+settings:
+
+    -
+        id: calendar-weekend-color
+        title: Weekend Text Color
+        description: Set the color of weekend in the calendar
+        type: variable-color
+        format: hex
+        default: '#f76a6a'
+    -
+        id: calendar-selected-daycolor
+        title: Selected Day Text Color
+        description: Set the color of selected day in the month view, defaulted to text-normal
+        type: variable-color
+        format: hex
+        default: '#'
+    -
+        id: calendar-current-day-color
+        title: Current Day (Today) Text Color
+        description: Set the color of the current day in the month view
+        type: variable-color
+        format: hex
+        default: '#'
+    -
+        id: calendar-selected-day-background
+        title: Selected Day Background Color
+        description: Set the color of selected day background in the month view, defaulted to the interactive-accent
+        type: variable-color
+        format: hex
+        default: '#'
+    -
+        id: calendar-header-date-color
+        title: Header Dates Text Color
+        description: Set the color of headers dates like (month/year, and date above the list), defaulted to the interactive-accent
+        type: variable-color
+        format: hex
+        default: '#'
+    -
+        id: calendar-weeknr-date-color
+        title: Week Number Text Color
+        description: Set the color of week numbers, defaulted to the interactive-accent
+        type: variable-color
+        format: hex
+        default: '#'
+*/
+
+.theme-light,
+.theme-dark {
+	--calendar-weekend-color: #f76a6a;
+	--calendar-selected-daycolor: var(--text-normal);
+	--calendar-selected-day-background: var(--interactive-accent);
+	--calendar-header-date-color: var(--interactive-accent);
+	--calendar-current-day-color: #74dd58;
+	--calendar-weeknr-date-color: var(--color-accent-2);
+}
+
+.calendar-tip-div {
+	text-align: center;
+	margin-top: 10px;
+}
+
+.calendar-tip-div img {
+	border-radius: 10px;
+}
+
+.CALENDAR_ICON {
+	fill: var(--icon-color) !important;
+}
+
+.calendar-plugin-view {
+	min-height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.calendar-plugin-view .react-calendar__tile.react-calendar__month-view__days__day:hover {
+	background: var(--background-secondary-alt);
+}
+
+.calendar-plugin-view .react-calendar__tile--active {
+	background-color: var(--calendar-selected-day-background) !important;
+}
+
+.calendar-plugin-view .react-calendar button:enabled:hover {
+	cursor: pointer;
+}
+
+.calendar-plugin-view .react-calendar__navigation {
+	display: flex;
+}
+
+.calendar-plugin-view .react-calendar__month-view__weekdays {
+	text-align: center;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: 0.75em;
+}
+
+.calendar-plugin-view .react-calendar__month-view__weekdays__weekday {
+	padding: 0.5em;
+}
+
+.calendar-plugin-view .react-calendar__month-view__weekdays__weekday abbr {
+	text-decoration: none;
+}
+
+.calendar-plugin-view .react-calendar__month-view__days__day--weekend {
+	color: var(--calendar-weekend-color);
+}
+
+.calendar-plugin-view .react-calendar__month-view__days__day--neighboringMonth {
+	color: var(--text-muted);
+	opacity: 0.5;
+}
+
+.calendar-plugin-view .react-calendar__tile {
+	max-width: 100%;
+	padding: 10px 6.6667px;
+	background: none;
+	text-align: center;
+	line-height: 16px;
+	height: 40px;
+	display: block;
+}
+
+.calendar-plugin-view button.react-calendar__tile.react-calendar__month-view__days__day,
+.calendar-plugin-view button.react-calendar__navigation__arrow,
+.calendar-plugin-view button.react-calendar__navigation__label {
+	background-color: transparent;
+	box-shadow: none !important;
+}
+
+.calendar-plugin-view button.react-calendar__navigation__label {
+	color: var(--calendar-header-date-color);
+	font-size: 1.3em;
+}
+
+.calendar-plugin-view .dots-wrapper {
+	font-size: 8px;
+	display: flex;
+	justify-content: center;
+	vertical-align: middle !important;
+	min-height: 3.5px !important;
+}
+
+.calendar-plugin-view .dots-wrapper svg {
+	margin-top: 3.8px;
+}
+
+.calendar-plugin-view .react-calendar__tile--active {
+	color: var(--calendar-selected-daycolor);
+	font-weight: bold;
+	font-size: 1em;
+}
+
+#calendar-divider {
+	height: 3.8px;
+	opacity: 0.3;
+	margin: 10px 0px 10px 0px;
+	border-bottom: 3px solid var(--text-muted);
+}
+
+.calendar-notelist-container {
+	justify-content: space-between;
+	display: block;
+	padding: 5px;
+	flex: 1;
+}
+
+.calendar-nav-action-plus {
+	width: 10%;
+	display: inline-block;
+	color: var(--text-muted);
+	vertical-align: top;
+	padding-top: 2px;
+}
+
+.calendar-nav-action-plus svg:hover {
+	cursor: pointer;
+	opacity: 0.6;
+}
+
+.calendar-nav-action-left {
+	display: inline-block;
+	width: 15%;
+	color: var(--text-muted);
+	text-align: right;
+}
+
+.calendar-nav-action-middle {
+	display: inline-block;
+	width: 50%;
+	text-align: center;
+	vertical-align: top;
+	font-size: 1.1em;
+	color: var(--calendar-header-date-color);
+	cursor: pointer;
+}
+
+.calendar-nav-action-right {
+	display: inline-block;
+	width: 15%;
+	text-align: left;
+	color: var(--text-muted);
+}
+
+.calendar-nav-action-left svg:hover,
+.calendar-nav-action-right svg:hover {
+	cursor: pointer;
+	opacity: 0.6;
+}
+
+.calendar-note-line {
+	padding-top: 3px;
+	padding-bottom: 3px;
+	font-size: var(--nav-item-size);
+}
+
+.calendar-note-line:hover {
+	cursor: pointer;
+	background-color: var(--background-secondary-alt);
+	color: var(--text-normal);
+}
+
+.calendar-note-line-icon {
+	padding-right: 3px;
+	padding-bottom: 2px;
+	vertical-align: middle;
+}
+
+.calendar-note-no-note {
+	font-size: var(--nav-item-size);
+	align-items: center;
+	text-align: center;
+	margin-top: 10px;
+}
+
+.calendar-no-note-icon {
+	vertical-align: middle;
+	padding-bottom: 2px;
+	margin-right: 3px;
+}
+
+.calendar-plugin-today abbr {
+	color: var(--calendar-current-day-color);
+	font-weight: bold;
+}
+
+/* START - Fixed Calendar Except Note List - Scroll */
+
+.calendar-plugin-view.fixed {
+	height: 100%;
+	max-height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.calendar-plugin-view.fixed .react-calendar {
+	height: 295px;
+}
+
+.calendar-plugin-view.fixed #calendar-divider {
+	height: 4px;
+}
+
+.calendar-plugin-view.fixed .calendar-notelist-header-container {
+	height: 30px;
+}
+
+.calendar-plugin-view.fixed .calendar-notelist-container {
+	width: 100%;
+	overflow-y: auto;
+	vertical-align: top;
+}
+
+.calendar-plugin-view .react-calendar__month-view__weekNumbers {
+	display: block !important;
+	color: var(--calendar-weeknr-date-color);
+	flex-basis: auto !important;
+	background-color: var(--background-modifier-cover);
+	font-size: var(--nav-item-size);
+	width: auto !important;
+}
+
+/* Add W prefix to week numbers */
+.calendar-plugin-view .react-calendar__month-view__weekNumbers .react-calendar__tile abbr::before {
+    content: "W";
+}
+
+/*  END - Fixed Calendar */
+
+.calendar-modal-inputel {
+	width: 100%;
+	height: 2.5em;
+}
+
+.calendar-modal-addspacediv {
+	height: 20px;
+}
+
+.calendar-modal-float-right {
+	float: right;
+}
+
+.calendar-custom-hidden {
+	display: none !important;
+}
+
+.calendar-note-line {
+	color: var(--text-muted);
+}
+
+.calendar-overflow-scroll {
+	overflow: scroll;
+	white-space: nowrap;
+}
+
+.calendar-overflow-hide {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+/* Styling for inline timestamp entries */
+.calendar-inline-timestamp {
+	border-left: 3px solid var(--calendar-header-date-color);
+	padding-left: 5px;
+	margin-left: 5px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	background-color: var(--background-secondary);
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	word-break: break-all;
+}
+
+.calendar-inline-timestamp:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Calendar Settings Styles */
+.calendar-calendars-container {
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.calendar-config {
+	background-color: var(--background-secondary);
+	border-radius: 5px;
+	padding: 10px;
+	margin-bottom: 15px;
+}
+
+.calendar-delete-btn {
+	color: var(--text-error);
+}
+
+/* Calendar item styling in note list */
+.calendar-note-line[data-calendar-id] {
+	position: relative;
+}
+
+.calendar-note-line[data-calendar-id]::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background-color: var(--calendar-color, var(--calendar-header-date-color));
+}
+
+.calendar-item-label {
+	font-size: 0.85em;
+	font-weight: bold;
+	margin-right: 5px;
+	color: var(--calendar-color, var(--calendar-header-date-color));
+	opacity: 0.8;
+}
+
+/* Week view styles */
+.calendar-week-day-section {
+	margin-bottom: 15px;
+}
+
+.calendar-week-day-header {
+	font-weight: bold;
+	padding: 5px;
+	background-color: var(--background-secondary-alt);
+	border-radius: 4px;
+	margin-bottom: 5px;
+	cursor: pointer;
+}
+
+.calendar-week-day-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Test pattern result styles */
+.calendar-test-result {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	padding: 10px;
+	border-radius: 5px;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.calendar-test-success {
+	color: #74dd58;
+	margin: 5px 0;
+}
+
+.calendar-test-warning {
+	color: #f5a623;
+	margin: 5px 0;
+}
+
+.calendar-test-error {
+	color: #ff5555;
+	margin: 5px 0;
+}
+
+.calendar-test-info {
+	color: #7aa2f7;
+	margin: 5px 0;
+}
+
+.calendar-test-match-details,
+.calendar-test-date-info {
+	margin-left: 15px;
+	padding-left: 10px;
+	border-left: 2px solid var(--background-modifier-border);
+}

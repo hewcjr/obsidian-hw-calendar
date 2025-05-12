@@ -1,0 +1,10 @@
+{
+	"id": "hw-calendar",
+	"name": "HW Calendar",
+	"version": "0.1.0",
+	"minAppVersion": "0.15.0",
+	"description": "lets users view their choice(s) of timestamped notes and/or other dated blocks of text on a calendar view",
+	"author": "Henry Williams",
+	"fundingUrl": "https://ko-fi.com/henryumabel",
+	"isDesktopOnly": false
+}
