@@ -93,18 +93,18 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 					) as CalendarInlineTimestamp[];
 
 					// Sort notes by display name
-					dayNotes = dayNotes.sort((a, b) => {
-						if (plugin.settings.sortingOption === 'name-rev')
-							[a.displayName, b.displayName] = [b.displayName, a.displayName];
-						return a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-					});
+                                        dayNotes = dayNotes.sort((a, b) => {
+                                                return plugin.settings.sortingOption === 'name-rev'
+                                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                                        });
 
 					// Sort inline timestamps by display name
-					dayInlineTimestamps = dayInlineTimestamps.sort((a, b) => {
-						if (plugin.settings.sortingOption === 'name-rev')
-							[a.displayName, b.displayName] = [b.displayName, a.displayName];
-						return a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-					});
+                                        dayInlineTimestamps = dayInlineTimestamps.sort((a, b) => {
+                                                return plugin.settings.sortingOption === 'name-rev'
+                                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                                        });
 				}
 
 				// Only add days that have items
@@ -151,18 +151,18 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 			}
 
 			// Sort notes by display name
-			notes = notes.sort((a, b) => {
-				if (plugin.settings.sortingOption === 'name-rev')
-					[a.displayName, b.displayName] = [b.displayName, a.displayName];
-				return a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-			});
+                        notes = notes.sort((a, b) => {
+                                return plugin.settings.sortingOption === 'name-rev'
+                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                        });
 
 			// Sort inline timestamps by display name
-			inlineTimestamps = inlineTimestamps.sort((a, b) => {
-				if (plugin.settings.sortingOption === 'name-rev')
-					[a.displayName, b.displayName] = [b.displayName, a.displayName];
-				return a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-			});
+                        inlineTimestamps = inlineTimestamps.sort((a, b) => {
+                                return plugin.settings.sortingOption === 'name-rev'
+                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                        });
 
 			// Get calendar information for each item
 			const getCalendarInfo = (calendarId?: string) => {
