@@ -34,15 +34,16 @@ export type DayChangeCommandAction = 'next-day' | 'previous-day' | 'today';
 export type DateSourceType = 'filename' | 'yaml' | 'inline';
 
 export interface CalendarConfig {
-	id: string;
-	name: string;
-	sourceType: DateSourceType;
-	format: string;
-	yamlKey?: string; // Only used when sourceType is 'yaml'
-	inlinePattern?: string; // Only used when sourceType is 'inline'
-	color?: string; // Optional color for visual distinction
-	enabled: boolean;
-	testPattern?: string; // Used for testing inline patterns
+        id: string;
+        name: string;
+        sourceType: DateSourceType;
+        format: string;
+        yamlKey?: string; // Only used when sourceType is 'yaml'
+        inlinePattern?: string; // Only used when sourceType is 'inline'
+        inlineWhitelist?: string; // Comma separated list of note paths for inline search
+        color?: string; // Optional color for visual distinction
+        enabled: boolean;
+        testPattern?: string; // Used for testing inline patterns
 }
 
 export const fileToCalendarItem = (params: { note: TFile, calendarId?: string }): CalendarItem => {

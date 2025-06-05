@@ -268,9 +268,16 @@ export default class CalendarPlugin extends Plugin {
 		// Maximum length for the display text
 		const MAX_DISPLAY_LENGTH = 255;
 
-		if (!calendar.inlinePattern) {
-			return false;
-		}
+                if (!calendar.inlinePattern) {
+                        return false;
+                }
+
+                if (calendar.inlineWhitelist && calendar.inlineWhitelist.trim() !== '') {
+                        const allowed = calendar.inlineWhitelist.split(',').map((s) => s.trim()).filter((s) => s !== '');
+                        if (allowed.length > 0 && !allowed.includes(file.path)) {
+                                return false;
+                        }
+                }
 
 		let changeFlag = false;
 		try {
