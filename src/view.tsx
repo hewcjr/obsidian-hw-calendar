@@ -5,7 +5,7 @@ import MyCalendar from './components/calendar';
 import { createRoot, Root } from 'react-dom/client';
 
 export const VIEW_TYPE = 'calendar';
-export const VIEW_DISPLAY_TEXT = 'HW Calendar';
+export const VIEW_DISPLAY_TEXT = 'Calendar';
 export const ICON = 'CALENDAR_ICON';
 
 export class CalendarView extends ItemView {
