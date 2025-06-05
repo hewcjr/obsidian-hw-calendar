@@ -36,15 +36,16 @@ export const DEFAULT_SETTINGS: CalendarPluginSettings = {
 			yamlKey: 'created',
 			enabled: true
 		},
-		{
-			id: 'inline-timestamp',
-			name: 'Inline Timestamps',
-			sourceType: 'inline',
-			format: 'YYYYMMDDHHmm',
-			inlinePattern: '^-\\s+(\\d{12}):',
-			enabled: true
-		}
-	]
+                {
+                        id: 'inline-timestamp',
+                        name: 'Inline Timestamps',
+                        sourceType: 'inline',
+                        format: 'YYYYMMDDHHmm',
+                        inlinePattern: '^-\\s+(\\d{12}):',
+                        inlineWhitelist: '',
+                        enabled: true
+                }
+        ]
 };
 
 export class CalendarPluginSettingsTab extends PluginSettingTab {
@@ -285,16 +286,27 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 					});
 
 				// Test pattern field
-				new Setting(calendarContainer)
-					.setName('Test Pattern')
-					.setDesc('Enter a sample line to test your regex pattern. The date should be captured in the first group.')
-					.addText((text) => {
-						text.setValue(calendar.testPattern || '- 20250311 - Optional Practices 8:35-9:25am')
-							.onChange((value) => {
-								calendar.testPattern = value;
-								this.plugin.saveSettings();
-							});
-					});
+                                new Setting(calendarContainer)
+                                        .setName('Test Pattern')
+                                        .setDesc('Enter a sample line to test your regex pattern. The date should be captured in the first group.')
+                                        .addText((text) => {
+                                                text.setValue(calendar.testPattern || '- 20250311 - Optional Practices 8:35-9:25am')
+                                                        .onChange((value) => {
+                                                                calendar.testPattern = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                        });
+
+                                new Setting(calendarContainer)
+                                        .setName('Whitelist Notes')
+                                        .setDesc('Comma separated list of note paths to scan. Leave empty to search all notes')
+                                        .addTextArea((text) => {
+                                                text.setValue(calendar.inlineWhitelist || '')
+                                                        .onChange((value) => {
+                                                                calendar.inlineWhitelist = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                        });
 
 				// Test result display
 				const testResultContainer = calendarContainer.createDiv('test-result-container');
