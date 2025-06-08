@@ -1,5 +1,6 @@
 import CalendarPlugin from 'main';
 import { PluginSettingTab, App, Setting } from 'obsidian';
+import { FileSuggestModal } from './fileSuggestModal';
 import { CalendarConfig } from 'types';
 
 export type OpenFileBehaviourType = 'new-tab' | 'new-tab-group' | 'current-tab' | 'obsidian-default';
@@ -297,16 +298,37 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                         });
                                         });
 
-                                new Setting(calendarContainer)
+                                let whitelistInput: HTMLTextAreaElement;
+                                const whitelistSetting = new Setting(calendarContainer)
                                         .setName('Whitelist Notes')
-                                        .setDesc('Comma separated list of note paths to scan. Leave empty to search all notes')
+                                        .setDesc('Limit inline pattern scanning to specific notes. Use the button to search.')
                                         .addTextArea((text) => {
                                                 text.setValue(calendar.inlineWhitelist || '')
                                                         .onChange((value) => {
                                                                 calendar.inlineWhitelist = value;
                                                                 this.plugin.saveSettings();
                                                         });
+                                                text.inputEl.rows = 3;
+                                                whitelistInput = text.inputEl;
                                         });
+
+                                whitelistSetting.addButton((btn) => {
+                                        btn.setButtonText('Add Note').setCta();
+                                        btn.onClick(() => {
+                                                const modal = new FileSuggestModal(this.app, (file) => {
+                                                        const existing = calendar.inlineWhitelist?.split(',').map((s) => s.trim()).filter((s) => s !== '') || [];
+                                                        if (!existing.includes(file.path)) {
+                                                                existing.push(file.path);
+                                                                calendar.inlineWhitelist = existing.join(', ');
+                                                                if (whitelistInput) {
+                                                                        whitelistInput.value = calendar.inlineWhitelist;
+                                                                }
+                                                                this.plugin.saveSettings();
+                                                        }
+                                                });
+                                                modal.open();
+                                        });
+                                });
 
 				// Test result display
 				const testResultContainer = calendarContainer.createDiv('test-result-container');
