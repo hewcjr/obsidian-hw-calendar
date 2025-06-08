@@ -62,6 +62,7 @@ date: 2023-05-11
     - Example: `^-\\s+(\\d{8})\\s+-` will match `- 20250311 - Optional Practices 8:35-9:25am` and capture `20250311`
 - Define the **Date Format** that matches your captured date structure
 - Use provided tests in the settings to verify your pattern works correctly
+- Optionally specify a whitelist of note paths to limit searching for matches. Use the **Add Note** button in settings to fuzzy search and add notes from your vault.
 
 ## Conclusion
 - use **Reload Plugin** option to activate the changes in the vault.

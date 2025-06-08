@@ -1,5 +1,6 @@
 import CalendarPlugin from 'main';
 import { PluginSettingTab, App, Setting } from 'obsidian';
+import { FileSuggestModal } from './fileSuggestModal';
 import { CalendarConfig } from 'types';
 
 export type OpenFileBehaviourType = 'new-tab' | 'new-tab-group' | 'current-tab' | 'obsidian-default';
@@ -36,15 +37,16 @@ export const DEFAULT_SETTINGS: CalendarPluginSettings = {
 			yamlKey: 'created',
 			enabled: true
 		},
-		{
-			id: 'inline-timestamp',
-			name: 'Inline Timestamps',
-			sourceType: 'inline',
-			format: 'YYYYMMDDHHmm',
-			inlinePattern: '^-\\s+(\\d{12}):',
-			enabled: true
-		}
-	]
+                {
+                        id: 'inline-timestamp',
+                        name: 'Inline Timestamps',
+                        sourceType: 'inline',
+                        format: 'YYYYMMDDHHmm',
+                        inlinePattern: '^-\\s+(\\d{12}):',
+                        inlineWhitelist: '',
+                        enabled: true
+                }
+        ]
 };
 
 export class CalendarPluginSettingsTab extends PluginSettingTab {
@@ -285,16 +287,48 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 					});
 
 				// Test pattern field
-				new Setting(calendarContainer)
-					.setName('Test Pattern')
-					.setDesc('Enter a sample line to test your regex pattern. The date should be captured in the first group.')
-					.addText((text) => {
-						text.setValue(calendar.testPattern || '- 20250311 - Optional Practices 8:35-9:25am')
-							.onChange((value) => {
-								calendar.testPattern = value;
-								this.plugin.saveSettings();
-							});
-					});
+                                new Setting(calendarContainer)
+                                        .setName('Test Pattern')
+                                        .setDesc('Enter a sample line to test your regex pattern. The date should be captured in the first group.')
+                                        .addText((text) => {
+                                                text.setValue(calendar.testPattern || '- 20250311 - Optional Practices 8:35-9:25am')
+                                                        .onChange((value) => {
+                                                                calendar.testPattern = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                        });
+
+                                let whitelistInput: HTMLTextAreaElement;
+                                const whitelistSetting = new Setting(calendarContainer)
+                                        .setName('Whitelist Notes')
+                                        .setDesc('Limit inline pattern scanning to specific notes. Use the button to search.')
+                                        .addTextArea((text) => {
+                                                text.setValue(calendar.inlineWhitelist || '')
+                                                        .onChange((value) => {
+                                                                calendar.inlineWhitelist = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                                text.inputEl.rows = 3;
+                                                whitelistInput = text.inputEl;
+                                        });
+
+                                whitelistSetting.addButton((btn) => {
+                                        btn.setButtonText('Add Note').setCta();
+                                        btn.onClick(() => {
+                                                const modal = new FileSuggestModal(this.app, (file) => {
+                                                        const existing = calendar.inlineWhitelist?.split(',').map((s) => s.trim()).filter((s) => s !== '') || [];
+                                                        if (!existing.includes(file.path)) {
+                                                                existing.push(file.path);
+                                                                calendar.inlineWhitelist = existing.join(', ');
+                                                                if (whitelistInput) {
+                                                                        whitelistInput.value = calendar.inlineWhitelist;
+                                                                }
+                                                                this.plugin.saveSettings();
+                                                        }
+                                                });
+                                                modal.open();
+                                        });
+                                });
 
 				// Test result display
 				const testResultContainer = calendarContainer.createDiv('test-result-container');
