@@ -280,7 +280,6 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                         calendar.format = value;
                                                         this.plugin.saveSettings();
                                                 });
-        codex/create--note-heading--calendar-object
                                 });
 
                         if (calendar.sourceType === 'note-heading') {
@@ -318,8 +317,6 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                 });
                                         });
                         }
-
-        main
 
 			// Inline pattern setting (only shown for inline source type)
 			if (calendar.sourceType === 'inline') {
