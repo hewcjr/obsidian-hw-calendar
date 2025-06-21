@@ -120,8 +120,8 @@ export default function MyCalendar(params: { plugin: CalendarPlugin }) {
 				// @ts-ignore - This prop exists in react-calendar but might not be in the type definitions
 				formatDay={(_locale, date) => dayjs(date).format('D')}
 				// Custom prop to format week numbers - might not be in type definitions
-				// @ts-ignore
-				formatWeekNumber={(weekNumber) => `${weekNumber}`}
+                                // @ts-ignore
+                                formatWeekNumber={(weekNumber) => `W${weekNumber.toString().padStart(2, '0')}`}
 			/>
 			<>
 				<div id="calendar-divider"></div>
