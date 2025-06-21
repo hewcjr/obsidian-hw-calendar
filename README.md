@@ -54,6 +54,7 @@ date: 2023-05-11
 
 
 - use **Reload Plugin** option to activate the changes in the vault.
+- Calendar entries in the note list are grouped by their calendar name.
 
 # Note Heading Option
 
