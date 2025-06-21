@@ -54,6 +54,16 @@ date: 2023-05-11
 
 
 - use **Reload Plugin** option to activate the changes in the vault.
+- Calendar entries in the note list are grouped by their calendar name.
+
+# Note Heading Option
+
+- Parse headings in a specific note for date stamps.
+- Set the Source Type to **Note Heading**.
+- Select the note using the **Select Note** button.
+- Optionally browse headings in that note with **Browse Headings** to verify available dates.
+- Define the **Date Format** used at the beginning of the heading text. Additional text after the date is allowed.
+- Each non-empty line under a matched heading becomes its own calendar entry using the heading's date.
 
 # Support
 - Hopefully this plugin will keep getting improved as much as possible. If you find this plugin useful, please support it at https://ko-fi.com/

@@ -2,7 +2,7 @@ import { CachedMetadata, Menu, Plugin, TAbstractFile, TFile, addIcon } from 'obs
 import { CalendarView, VIEW_TYPE } from 'view';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { CalendarConfig, DateSourceType, DayChangeCommandAction, CalendarDaysMap, fileToCalendarItem, inlineTimestampToCalendarItem } from 'types';
+import { CalendarConfig, DateSourceType, DayChangeCommandAction, CalendarDaysMap, fileToCalendarItem, inlineTimestampToCalendarItem, headingToCalendarItem } from 'types';
 import { CALENDAR_ICON } from './util/icons';
 import { CalendarPluginSettings, DEFAULT_SETTINGS, CalendarPluginSettingsTab } from './settings/settings';
 
@@ -260,11 +260,11 @@ export default class CalendarPlugin extends Plugin {
 	 * @param CalendarDays Optional calendar days map to add entries to
 	 * @returns boolean (if any change happened, true)
 	 */
-	scanFileForInlinePattern = async (
-		file: TFile,
-		calendar: CalendarConfig,
-		CalendarDays?: CalendarDaysMap
-	): Promise<boolean> => {
+        scanFileForInlinePattern = async (
+                file: TFile,
+                calendar: CalendarConfig,
+                CalendarDays?: CalendarDaysMap
+        ): Promise<boolean> => {
 		// Maximum length for the display text
 		const MAX_DISPLAY_LENGTH = 255;
 
@@ -363,8 +363,73 @@ export default class CalendarPlugin extends Plugin {
 			console.error(`Error scanning file ${file.path} for pattern ${calendar.inlinePattern}:`, error);
 		}
 
-		return changeFlag;
-	};
+                return changeFlag;
+        };
+
+        scanFileForDateHeadings = async (
+                file: TFile,
+                calendar: CalendarConfig,
+                CalendarDays?: CalendarDaysMap
+        ): Promise<boolean> => {
+                if (!calendar.notePath || file.path !== calendar.notePath) {
+                        return false;
+                }
+
+                let changeFlag = false;
+                const cache = this.app.metadataCache.getFileCache(file);
+                if (!cache || !cache.headings) return false;
+
+                // Read file lines once so we can map headings to their content
+                const fileContent = await this.app.vault.read(file);
+                const lines = fileContent.split('\n');
+
+                const MAX_DISPLAY_LENGTH = 255;
+
+                for (let i = 0; i < cache.headings.length; i++) {
+                        const heading = cache.headings[i];
+                        const headingText = heading.heading;
+                        const parsedDate = dayjs(headingText, calendar.format);
+                        if (!parsedDate.isValid()) continue;
+
+                        const dateString = parsedDate.format('YYYY-MM-DD');
+
+                        const startLine = heading.position.end.line + 1;
+                        const endLine = i + 1 < cache.headings.length
+                                ? cache.headings[i + 1].position.start.line - 1
+                                : lines.length - 1;
+
+                        for (let lineNr = startLine; lineNr <= endLine; lineNr++) {
+                                const text = lines[lineNr]?.trim();
+                                if (!text || text.startsWith('#')) continue;
+
+                                const display = text.length > MAX_DISPLAY_LENGTH ? text.slice(0, MAX_DISPLAY_LENGTH) + '...' : text;
+                                const item = headingToCalendarItem({
+                                        file,
+                                        title: display,
+                                        lineNumber: lineNr + 1,
+                                        calendarId: calendar.id
+                                });
+
+                                if (CalendarDays) {
+                                        if (dateString in CalendarDays) {
+                                                CalendarDays[dateString] = [...CalendarDays[dateString], item];
+                                        } else {
+                                                CalendarDays[dateString] = [item];
+                                        }
+                                } else {
+                                        if (dateString in this.CALENDAR_DAYS_STATE) {
+                                                this.CALENDAR_DAYS_STATE[dateString] = [...this.CALENDAR_DAYS_STATE[dateString], item];
+                                        } else {
+                                                this.CALENDAR_DAYS_STATE[dateString] = [item];
+                                        }
+                                }
+
+                                changeFlag = true;
+                        }
+                }
+
+                return changeFlag;
+        };
 
 	/**
 	 * Use this function to force update the calendar and file list view
@@ -425,10 +490,12 @@ export default class CalendarPlugin extends Plugin {
 						];
 					}
 				}
-			} else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
-				// Scan file content for the specified inline pattern
-				await this.scanFileForInlinePattern(file, calendar);
-			}
+                        } else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
+                                // Scan file content for the specified inline pattern
+                                await this.scanFileForInlinePattern(file, calendar);
+                        } else if (calendar.sourceType === 'note-heading') {
+                                await this.scanFileForDateHeadings(file, calendar);
+                        }
 		}
 
 		// Legacy code removed
@@ -485,13 +552,18 @@ export default class CalendarPlugin extends Plugin {
 							}
 						}
 					}
-				} else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
-					// Scan file content for the specified inline pattern
-					const patternFound = await this.scanFileForInlinePattern(file, calendar);
-					if (patternFound) {
-						changeFlag = true;
-					}
-				}
+                                } else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
+                                        // Scan file content for the specified inline pattern
+                                        const patternFound = await this.scanFileForInlinePattern(file, calendar);
+                                        if (patternFound) {
+                                                changeFlag = true;
+                                        }
+                                } else if (calendar.sourceType === 'note-heading') {
+                                        const headingFound = await this.scanFileForDateHeadings(file, calendar);
+                                        if (headingFound) {
+                                                changeFlag = true;
+                                        }
+                                }
 			}
 
 			// Legacy code removed
@@ -535,13 +607,18 @@ export default class CalendarPlugin extends Plugin {
 				} else if (calendar.sourceType === 'yaml' && calendar.yamlKey) {
 					// For new files, we need to wait for the metadata cache to be updated
 					// This will be handled by the handleCacheChange method
-				} else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
-					// Scan file content for the specified inline pattern
-					const patternFound = await this.scanFileForInlinePattern(file, calendar);
-					if (patternFound) {
-						changeFlag = true;
-					}
-				}
+                                } else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
+                                        // Scan file content for the specified inline pattern
+                                        const patternFound = await this.scanFileForInlinePattern(file, calendar);
+                                        if (patternFound) {
+                                                changeFlag = true;
+                                        }
+                                } else if (calendar.sourceType === 'note-heading') {
+                                        const headingFound = await this.scanFileForDateHeadings(file, calendar);
+                                        if (headingFound) {
+                                                changeFlag = true;
+                                        }
+                                }
 			}
 
 			// Legacy code removed
@@ -625,10 +702,12 @@ export default class CalendarPlugin extends Plugin {
 							CalendarDays[parsedDayISOString] = [fileToCalendarItem({ note: mdFile, calendarId: calendar.id })];
 						}
 					}
-				} else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
-					// Scan file content for the specified inline pattern
-					await this.scanFileForInlinePattern(mdFile, calendar, CalendarDays);
-				}
+                                } else if (calendar.sourceType === 'inline' && calendar.inlinePattern) {
+                                        // Scan file content for the specified inline pattern
+                                        await this.scanFileForInlinePattern(mdFile, calendar, CalendarDays);
+                                } else if (calendar.sourceType === 'note-heading' && calendar.notePath && mdFile.path === calendar.notePath) {
+                                        await this.scanFileForDateHeadings(mdFile, calendar, CalendarDays);
+                                }
 			}
 
 			// Legacy code removed

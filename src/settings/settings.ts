@@ -1,11 +1,12 @@
 import CalendarPlugin from 'main';
-import { PluginSettingTab, App, Setting } from 'obsidian';
+import { PluginSettingTab, App, Setting, TFile } from 'obsidian';
 import { FileSuggestModal } from './fileSuggestModal';
+import { SectionSuggestModal } from './sectionSuggestModal';
 import { CalendarConfig } from 'types';
 
 export type OpenFileBehaviourType = 'new-tab' | 'new-tab-group' | 'current-tab' | 'obsidian-default';
 export type SortingOption = 'name' | 'name-rev';
-export type DateSourceOption = 'filename' | 'yaml' | 'inline';
+export type DateSourceOption = 'filename' | 'yaml' | 'inline' | 'note-heading';
 export type CalendarType = 'US' | 'ISO 8601';
 export type OverflowBehaviour = 'scroll' | 'hide' | 'next-line';
 
@@ -241,10 +242,11 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 				.setName('Source Type')
 				.setDesc('The type of source to use for this calendar')
 				.addDropdown((dropdown) => {
-					dropdown
-						.addOption('yaml', 'YAML Frontmatter')
-						.addOption('filename', 'Filename')
-						.addOption('inline', 'In-Line Pattern')
+                                        dropdown
+                                                .addOption('yaml', 'YAML Frontmatter')
+                                                .addOption('filename', 'Filename')
+                                                .addOption('inline', 'In-Line Pattern')
+                                                .addOption('note-heading', 'Note Heading')
 						.setValue(calendar.sourceType)
 						.onChange((value: DateSourceOption) => {
 							calendar.sourceType = value;
@@ -278,8 +280,46 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                         calendar.format = value;
                                                         this.plugin.saveSettings();
                                                 });
-                                        stopProp(text.inputEl);
+        codex/create--note-heading--calendar-object
                                 });
+
+                        if (calendar.sourceType === 'note-heading') {
+                                let noteInputEl: HTMLInputElement;
+                                new Setting(calendarContainer)
+                                        .setName('Note')
+                                        .setDesc('Note containing date headings')
+                                        .addText((text) => {
+                                                noteInputEl = text.inputEl;
+                                                stopProp(text.inputEl);
+                                                text.setValue(calendar.notePath || '')
+                                                        .onChange((value) => {
+                                                                calendar.notePath = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                        })
+                                        .addButton((btn) => {
+                                                btn.setButtonText('Select Note').onClick(() => {
+                                                        const modal = new FileSuggestModal(this.app, (file) => {
+                                                                calendar.notePath = file.path;
+                                                                if (noteInputEl) noteInputEl.value = file.path;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                                        modal.open();
+                                                });
+                                        })
+                                        .addButton((btn) => {
+                                                btn.setButtonText('Browse Headings').onClick(() => {
+                                                        if (!calendar.notePath) return;
+                                                        const af = this.app.vault.getAbstractFileByPath(calendar.notePath);
+                                                        if (af && af instanceof TFile) {
+                                                                const modal = new SectionSuggestModal(this.app, af, this.plugin);
+                                                                modal.open();
+                                                        }
+                                                });
+                                        });
+                        }
+
+        main
 
 			// Inline pattern setting (only shown for inline source type)
 			if (calendar.sourceType === 'inline') {

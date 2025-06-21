@@ -8,7 +8,7 @@ import CalendarPlugin from 'main';
 import { isMouseEvent, openFile } from '../util/utils';
 import { Menu, TFile } from 'obsidian';
 import { VIEW_TYPE } from 'view';
-import { CalendarNote, CalendarInlineTimestamp } from 'types';
+import { CalendarNote, CalendarInlineTimestamp, CalendarNoteHeading, CalendarItem } from 'types';
 
 interface NoteListComponentParams {
 	selectedDay: Date;
@@ -18,6 +18,11 @@ interface NoteListComponentParams {
 	forceValue: number;
 	selectedWeek: { weekNumber: number, date: Date } | null;
 	setSelectedWeek: (week: { weekNumber: number, date: Date } | null) => void;
+}
+
+interface CalendarGroup {
+        calendarId: string;
+        items: CalendarItem[];
 }
 
 export default function NoteListComponent(params: NoteListComponentParams) {
@@ -60,133 +65,120 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 		}
 	};
 
-	const selectedDayItems = useMemo(() => {
-		// If a week is selected, get all items for the entire week
-		if (selectedWeek) {
-			// Create an array to hold items grouped by day
-			const weekDays: {
-				date: Date;
-				dayString: string;
-				notes: CalendarNote[];
-				inlineTimestamps: CalendarInlineTimestamp[]
-			}[] = [];
-
-			// Get the start date of the week (the date passed from onClickWeekNumber)
-			const startDate = dayjs(selectedWeek.date);
-
-			// Loop through 7 days of the week
-			for (let i = 0; i < 7; i++) {
-				const currentDate = startDate.add(i, 'day');
-				const currentDateIso = currentDate.format('YYYY-MM-DD');
-				let dayNotes: CalendarNote[] = [];
-				let dayInlineTimestamps: CalendarInlineTimestamp[] = [];
-
-				if (currentDateIso in plugin.CALENDAR_DAYS_STATE) {
-					// Get regular notes for this day
-					dayNotes = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
-						(calendarItem) => calendarItem.type === 'note'
-					) as CalendarNote[];
-
-					// Get inline timestamp entries for this day
-					dayInlineTimestamps = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
-						(calendarItem) => calendarItem.type === 'inline-timestamp'
-					) as CalendarInlineTimestamp[];
-
-					// Sort notes by display name
-                                        dayNotes = dayNotes.sort((a, b) => {
-                                                return plugin.settings.sortingOption === 'name-rev'
-                                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
-                                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-                                        });
-
-					// Sort inline timestamps by display name
-                                        dayInlineTimestamps = dayInlineTimestamps.sort((a, b) => {
-                                                return plugin.settings.sortingOption === 'name-rev'
-                                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
-                                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-                                        });
-				}
-
-				// Only add days that have items
-				if (dayNotes.length > 0 || dayInlineTimestamps.length > 0) {
-					weekDays.push({
-						date: currentDate.toDate(),
-						dayString: currentDate.format('ddd, DD MMM YYYY'),
-						notes: dayNotes,
-						inlineTimestamps: dayInlineTimestamps
-					});
-				}
-			}
-
-			// Get calendar information for each item
-			const getCalendarInfo = (calendarId?: string) => {
-				if (!calendarId) return null;
-				return plugin.settings.calendars.find(cal => cal.id === calendarId);
-			};
-
-			return {
-				isWeekView: true,
-				weekDays,
-				weekNumber: selectedWeek.weekNumber,
-				notes: [], // Empty for week view
-				inlineTimestamps: [], // Empty for week view
-				getCalendarInfo
-			};
-		} else {
-			// Regular day view
-			const selectedDayIso = dayjs(selectedDay).format('YYYY-MM-DD');
-			let notes: CalendarNote[] = [];
-			let inlineTimestamps: CalendarInlineTimestamp[] = [];
-
-			if (selectedDayIso in plugin.CALENDAR_DAYS_STATE) {
-				// Get regular notes
-				notes = plugin.CALENDAR_DAYS_STATE[selectedDayIso].filter(
-					(calendarItem) => calendarItem.type === 'note'
-				) as CalendarNote[];
-
-				// Get inline timestamp entries
-				inlineTimestamps = plugin.CALENDAR_DAYS_STATE[selectedDayIso].filter(
-					(calendarItem) => calendarItem.type === 'inline-timestamp'
-				) as CalendarInlineTimestamp[];
-			}
-
-			// Sort notes by display name
-                        notes = notes.sort((a, b) => {
+        const selectedDayItems = useMemo(() => {
+                const sortItems = (arr: CalendarItem[]): CalendarItem[] => {
+                        return arr.sort((a, b) => {
                                 return plugin.settings.sortingOption === 'name-rev'
                                         ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
                                         : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
                         });
+                };
 
-			// Sort inline timestamps by display name
-                        inlineTimestamps = inlineTimestamps.sort((a, b) => {
-                                return plugin.settings.sortingOption === 'name-rev'
-                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
-                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
-                        });
+                const groupByCalendar = (items: CalendarItem[]): CalendarGroup[] => {
+                        const map: Record<string, CalendarItem[]> = {};
+                        for (const item of items) {
+                                const id = item.calendarId || 'none';
+                                if (!map[id]) map[id] = [];
+                                map[id].push(item);
+                        }
+                        return Object.entries(map).map(([calendarId, arr]) => ({
+                                calendarId,
+                                items: sortItems(arr),
+                        }));
+                };
 
-			// Get calendar information for each item
-			const getCalendarInfo = (calendarId?: string) => {
-				if (!calendarId) return null;
-				return plugin.settings.calendars.find(cal => cal.id === calendarId);
-			};
+                const getCalendarInfo = (calendarId?: string) => {
+                        if (!calendarId) return null;
+                        return plugin.settings.calendars.find(cal => cal.id === calendarId);
+                };
 
-			return { isWeekView: false, notes, inlineTimestamps, getCalendarInfo };
-		}
-	}, [selectedDay, selectedWeek, forceValue, plugin.CALENDAR_DAYS_STATE, plugin.settings.sortingOption, plugin.settings.calendars]);
+                if (selectedWeek) {
+                        const weekDays: { date: Date; dayString: string; groups: CalendarGroup[] }[] = [];
+                        const startDate = dayjs(selectedWeek.date);
 
-	const triggerFileContextMenu = (e: React.MouseEvent | React.TouchEvent, filePath: string) => {
-		let abstractFile = plugin.app.vault.getAbstractFileByPath(filePath);
-		if (abstractFile) {
-			const fileMenu = new Menu();
-			plugin.app.workspace.trigger('file-menu', fileMenu, abstractFile, VIEW_TYPE);
-			if (isMouseEvent(e)) {
-				fileMenu.showAtPosition({ x: e.pageX, y: e.pageY });
-			} else {
-				// @ts-ignore
-				fileMenu.showAtPosition({ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY });
-			}
-		}
-	};
+                        for (let i = 0; i < 7; i++) {
+                                const currentDate = startDate.add(i, 'day');
+                                const iso = currentDate.format('YYYY-MM-DD');
+                                const items = iso in plugin.CALENDAR_DAYS_STATE ? plugin.CALENDAR_DAYS_STATE[iso] : [];
+                                const groups = groupByCalendar(items);
+                                if (groups.length > 0) {
+                                        weekDays.push({
+                                                date: currentDate.toDate(),
+                                                dayString: currentDate.format('ddd, DD MMM YYYY'),
+                                                groups,
+                                        });
+                                }
+                        }
+
+                        return { isWeekView: true, weekDays, weekNumber: selectedWeek.weekNumber, groups: [], getCalendarInfo };
+                } else {
+                        const dayIso = dayjs(selectedDay).format('YYYY-MM-DD');
+                        const items = dayIso in plugin.CALENDAR_DAYS_STATE ? plugin.CALENDAR_DAYS_STATE[dayIso] : [];
+                        const groups = groupByCalendar(items);
+
+                        return { isWeekView: false, groups, getCalendarInfo };
+                }
+        }, [selectedDay, selectedWeek, forceValue, plugin.CALENDAR_DAYS_STATE, plugin.settings.sortingOption, plugin.settings.calendars]);
+
+        const triggerFileContextMenu = (e: React.MouseEvent | React.TouchEvent, filePath: string) => {
+                let abstractFile = plugin.app.vault.getAbstractFileByPath(filePath);
+                if (abstractFile) {
+                        const fileMenu = new Menu();
+                        plugin.app.workspace.trigger('file-menu', fileMenu, abstractFile, VIEW_TYPE);
+                        if (isMouseEvent(e)) {
+                                fileMenu.showAtPosition({ x: e.pageX, y: e.pageY });
+                        } else {
+                                // @ts-ignore
+                                fileMenu.showAtPosition({ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY });
+                        }
+                }
+        };
+
+        const renderCalendarItem = (item: CalendarItem) => {
+                const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
+                const baseClass =
+                        'calendar-note-line' +
+                        (item.type === 'inline-timestamp'
+                                ? ' calendar-inline-timestamp'
+                                : item.type === 'note-heading'
+                                ? ' calendar-note-heading'
+                                : '');
+                const idKey = item.type === 'note' ? item.path : `${item.path}-${item.lineNumber}`;
+                return (
+                        <div
+                                className={
+                                        baseClass +
+                                        (plugin.settings.fileNameOverflowBehaviour == 'hide' ? ' calendar-overflow-hide' : '')
+                                }
+                                id={idKey}
+                                key={idKey}
+                                data-calendar-id={item.calendarId}
+                                style={
+                                        calendarInfo?.color
+                                                ? ({ '--calendar-color': calendarInfo.color } as React.CSSProperties)
+                                                : undefined
+                                }
+                                onClick={(e) =>
+                                        openFilePath(
+                                                e,
+                                                item.path,
+                                                item.type === 'note' ? undefined : item.lineNumber
+                                        )
+                                }
+                                onContextMenu={(e) => triggerFileContextMenu(e, item.path)}
+                        >
+                                <HiOutlineDocumentText className="calendar-note-line-icon" />
+                                <span>
+                                        {calendarInfo && (
+                                                <span className="calendar-item-label" title={calendarInfo.name}>
+                                                        {calendarInfo.name}:
+                                                </span>
+                                        )}
+                                        {item.displayName}
+                                </span>
+                        </div>
+                );
+        };
 
 	return (
 		<>
@@ -241,173 +233,58 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 					</>
 				)}
 			</div>
-			<div
-				className={
-					'calendar-notelist-container ' +
-					(plugin.settings.fileNameOverflowBehaviour == 'scroll' ? 'calendar-overflow-scroll' : '')
-				}>
-				{selectedDayItems.isWeekView ? (
-					// Week view
-					<>
-						{selectedDayItems.weekDays.length === 0 ? (
-							<div className="calendar-note-no-note">
-								<RiPhoneFindLine className="calendar-no-note-icon" />
-								No entries found for this week
-							</div>
-						) : (
-							// Display items grouped by day
-							selectedDayItems.weekDays.map((day) => (
-								<div key={day.dayString} className="calendar-week-day-section">
-									<div className="calendar-week-day-header" onClick={() => {
-										setSelectedDay(day.date);
-										setSelectedWeek(null);
-									}}>
-										{day.dayString}
-									</div>
-
-									{/* Display regular notes for this day */}
-									{day.notes.map((note) => {
-										const calendarInfo = selectedDayItems.getCalendarInfo(note.calendarId);
-										return (
-											<div
-												className={
-													'calendar-note-line' +
-													(plugin.settings.fileNameOverflowBehaviour == 'hide'
-														? ' calendar-overflow-hide'
-														: '')
-												}
-												id={note.path}
-												key={note.path}
-												data-calendar-id={note.calendarId}
-												style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
-												onClick={(e) => openFilePath(e, note.path)}
-												onContextMenu={(e) => triggerFileContextMenu(e, note.path)}>
-												<HiOutlineDocumentText className="calendar-note-line-icon" />
-												<span>
-													{calendarInfo && (
-														<span className="calendar-item-label" title={calendarInfo.name}>
-															{calendarInfo.name}:
-														</span>
-													)}
-													{note.displayName}
-												</span>
-											</div>
-										);
-									})}
-
-									{/* Display inline timestamp entries for this day */}
-									{day.inlineTimestamps.map((item) => {
-										const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
-										return (
-											<div
-												className={
-													'calendar-note-line calendar-inline-timestamp' +
-													(plugin.settings.fileNameOverflowBehaviour == 'hide'
-														? ' calendar-overflow-hide'
-														: '')
-												}
-												id={`${item.path}-${item.lineNumber}`}
-												key={`${item.path}-${item.lineNumber}`}
-												data-calendar-id={item.calendarId}
-												style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
-												onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
-												onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
-												<HiOutlineDocumentText className="calendar-note-line-icon" />
-												<span>
-													{calendarInfo && (
-														<span className="calendar-item-label" title={calendarInfo.name}>
-															{calendarInfo.name}:
-														</span>
-													)}
-													{item.displayName}
-												</span>
-											</div>
-										);
-									})}
-								</div>
-							))
-						)}
-					</>
-				) : (
-					// Day view
-					<>
-						{selectedDayItems.notes.length === 0 && selectedDayItems.inlineTimestamps.length === 0 && (
-							<div className="calendar-note-no-note">
-								<RiPhoneFindLine className="calendar-no-note-icon" />
-								No entries found
-							</div>
-						)}
-
-						{/* Display regular notes */}
-						{selectedDayItems.notes.length > 0 && (
-							<>
-								{selectedDayItems.notes.map((note) => {
-									const calendarInfo = selectedDayItems.getCalendarInfo(note.calendarId);
-									return (
-										<div
-											className={
-												'calendar-note-line' +
-												(plugin.settings.fileNameOverflowBehaviour == 'hide'
-													? ' calendar-overflow-hide'
-													: '')
-											}
-											id={note.path}
-											key={note.path}
-											data-calendar-id={note.calendarId}
-											style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
-											onClick={(e) => openFilePath(e, note.path)}
-											onContextMenu={(e) => triggerFileContextMenu(e, note.path)}>
-											<HiOutlineDocumentText className="calendar-note-line-icon" />
-											<span>
-												{calendarInfo && (
-													<span className="calendar-item-label" title={calendarInfo.name}>
-														{calendarInfo.name}:
-													</span>
-												)}
-												{note.displayName}
-											</span>
-										</div>
-									);
-								})}
-							</>
-						)}
-
-						{/* Display inline timestamp entries */}
-						{selectedDayItems.inlineTimestamps.length > 0 && (
-							<>
-								{selectedDayItems.inlineTimestamps.map((item) => {
-									const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
-									return (
-										<div
-											className={
-												'calendar-note-line calendar-inline-timestamp' +
-												(plugin.settings.fileNameOverflowBehaviour == 'hide'
-													? ' calendar-overflow-hide'
-													: '')
-											}
-											id={`${item.path}-${item.lineNumber}`}
-											key={`${item.path}-${item.lineNumber}`}
-											data-calendar-id={item.calendarId}
-											style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
-											onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
-											onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
-											<HiOutlineDocumentText className="calendar-note-line-icon" />
-											<span>
-												{calendarInfo && (
-													<span className="calendar-item-label" title={calendarInfo.name}>
-														{calendarInfo.name}:
-													</span>
-												)}
-												{item.displayName}
-											</span>
-										</div>
-									);
-								})}
-							</>
-						)}
-					</>
-				)}
-			</div>
+                        <div
+                                className={
+                                        'calendar-notelist-container ' +
+                                        (plugin.settings.fileNameOverflowBehaviour == 'scroll' ? 'calendar-overflow-scroll' : '')
+                                }>
+                                {selectedDayItems.isWeekView ? (
+                                        <>
+                                                {selectedDayItems.weekDays.length === 0 ? (
+                                                        <div className="calendar-note-no-note">
+                                                                <RiPhoneFindLine className="calendar-no-note-icon" />
+                                                                No entries found for this week
+                                                        </div>
+                                                ) : (
+                                                        selectedDayItems.weekDays.map((day) => (
+                                                                <div key={day.dayString} className="calendar-week-day-section">
+                                                                        <div className="calendar-week-day-header" onClick={() => { setSelectedDay(day.date); setSelectedWeek(null); }}>
+                                                                                {day.dayString}
+                                                                        </div>
+                                                                        {day.groups.map((group) => {
+                                                                                const info = selectedDayItems.getCalendarInfo(group.calendarId);
+                                                                                return (
+                                                                                        <React.Fragment key={group.calendarId}>
+                                                                                                <div className="calendar-object-group-header">{info ? info.name : group.calendarId}</div>
+                                                                                                {group.items.map(renderCalendarItem)}
+                                                                                        </React.Fragment>
+                                                                                );
+                                                                        })}
+                                                                </div>
+                                                        ))
+                                                )}
+                                        </>
+                                ) : (
+                                        <>
+                                                {selectedDayItems.groups.length === 0 ? (
+                                                        <div className="calendar-note-no-note">
+                                                                <RiPhoneFindLine className="calendar-no-note-icon" />
+                                                                No entries found
+                                                        </div>
+                                                ) : (
+                                                        selectedDayItems.groups.map((group) => {
+                                                                const info = selectedDayItems.getCalendarInfo(group.calendarId);
+                                                                return (
+                                                                        <React.Fragment key={group.calendarId}>
+                                                                                <div className="calendar-object-group-header">{info ? info.name : group.calendarId}</div>
+                                                                                {group.items.map(renderCalendarItem)}
+                                                                        </React.Fragment>
+                                                                );
+                                                        })
+                                                )}
+                                        </>
+                                )}
+                        </div>
 		</>
 	);
 }
