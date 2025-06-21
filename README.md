@@ -4,8 +4,8 @@
 - Supports viewing multiple "calendars" containing different formats. Just set and test your date formats in the plugin settings.
 - This plugin is a based from the work of [oz-calendar](https://github.com/ozntel/oz-calendar).
 
-# Current Bugs
-- In the settings page the text fields often refuses to be written on. A workaround is to paste in text from clipboard but a better fix is underway.
+# Changes
+- Settings inputs now allow normal typing without workarounds.
 
 # Multiple Formats, Multiple Calendar Types
 - The mission of this plugin is to integrate different calendar objects from different timestamps into a single calendar widget.
