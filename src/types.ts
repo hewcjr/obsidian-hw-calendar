@@ -31,7 +31,7 @@ export type CalendarNoteHeading = {
         calendarId?: string;
 };
 
-type CalendarItem = CalendarNote | CalendarReminder | CalendarInlineTimestamp | CalendarNoteHeading;
+export type CalendarItem = CalendarNote | CalendarReminder | CalendarInlineTimestamp | CalendarNoteHeading;
 
 export interface CalendarDaysMap {
 	[key: string]: CalendarItem[];

@@ -110,7 +110,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                 }
                         }
 
-                        return { isWeekView: true, weekDays, weekNumber: selectedWeek.weekNumber, groups: [], getCalendarInfo };
+                        return { isWeekView: true, weekDays, weekNumber: selectedWeek.weekNumber, groups: [] as CalendarGroup[], getCalendarInfo };
                 } else {
                         const dayIso = dayjs(selectedDay).format('YYYY-MM-DD');
                         const items = dayIso in plugin.CALENDAR_DAYS_STATE ? plugin.CALENDAR_DAYS_STATE[dayIso] : [];
@@ -143,7 +143,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                 : item.type === 'note-heading'
                                 ? ' calendar-note-heading'
                                 : '');
-                const idKey = item.type === 'note' ? item.path : `${item.path}-${item.lineNumber}`;
+                const idKey = item.type === 'note' ? item.path : `${item.path}-${'lineNumber' in item ? item.lineNumber : ''}`;
                 return (
                         <div
                                 className={
@@ -162,18 +162,13 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                         openFilePath(
                                                 e,
                                                 item.path,
-                                                item.type === 'note' ? undefined : item.lineNumber
+                                                item.type === 'note' ? undefined : 'lineNumber' in item ? item.lineNumber : undefined
                                         )
                                 }
                                 onContextMenu={(e) => triggerFileContextMenu(e, item.path)}
                         >
                                 <HiOutlineDocumentText className="calendar-note-line-icon" />
                                 <span>
-                                        {calendarInfo && (
-                                                <span className="calendar-item-label" title={calendarInfo.name}>
-                                                        {calendarInfo.name}:
-                                                </span>
-                                        )}
                                         {item.displayName}
                                 </span>
                         </div>
@@ -255,7 +250,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                                                                 const info = selectedDayItems.getCalendarInfo(group.calendarId);
                                                                                 return (
                                                                                         <React.Fragment key={group.calendarId}>
-                                                                                                <div className="calendar-object-group-header">{info ? info.name : group.calendarId}</div>
+                                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ '--calendar-color': info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
                                                                                                 {group.items.map(renderCalendarItem)}
                                                                                         </React.Fragment>
                                                                                 );
@@ -276,7 +271,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                                                 const info = selectedDayItems.getCalendarInfo(group.calendarId);
                                                                 return (
                                                                         <React.Fragment key={group.calendarId}>
-                                                                                <div className="calendar-object-group-header">{info ? info.name : group.calendarId}</div>
+                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ '--calendar-color': info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
                                                                                 {group.items.map(renderCalendarItem)}
                                                                         </React.Fragment>
                                                                 );
