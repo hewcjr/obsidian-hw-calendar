@@ -57,9 +57,13 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display() {
-		let { containerEl } = this;
-		containerEl.empty();
+        display() {
+                let { containerEl } = this;
+                containerEl.empty();
+
+                const stopProp = (el: HTMLInputElement | HTMLTextAreaElement) => {
+                        el.addEventListener('keydown', (e) => e.stopPropagation());
+                };
 
 		/* ------------- General Settings ------------- */
 
@@ -175,17 +179,18 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		// Display existing calendars
-		const calendarsContainer = containerEl.createDiv('calendars-container');
-		calendarsContainer.addClass('calendar-calendars-container');
+                // Display existing calendars
+                const calendarsContainer = containerEl.createDiv('calendars-container');
+                calendarsContainer.addClass('calendar-calendars-container');
 
 		// For each calendar, create a collapsible section
-		this.plugin.settings.calendars.forEach((calendar, index) => {
-			const calendarContainer = calendarsContainer.createDiv(`calendar-${calendar.id}`);
-			calendarContainer.addClass('calendar-config');
+                this.plugin.settings.calendars.forEach((calendar, index) => {
+                        const detailsEl = calendarsContainer.createEl('details', { cls: `calendar-${calendar.id} calendar-config` });
+                        const summaryEl = detailsEl.createEl('summary');
+                        const calendarContainer = detailsEl.createDiv();
 
-			// Calendar header with name and controls
-			const headerSetting = new Setting(calendarContainer)
+                        // Calendar header with name and controls
+                        const headerSetting = new Setting(summaryEl)
 				.setName(calendar.name)
 				.setDesc(`ID: ${calendar.id}`)
 				.addToggle((toggle) => {
@@ -221,14 +226,15 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 			new Setting(calendarContainer)
 				.setName('Calendar Name')
 				.setDesc('The name of this calendar that will be displayed in the calendar widget')
-				.addText((text) => {
-					text.setValue(calendar.name)
-						.onChange((value) => {
-							calendar.name = value;
-							headerSetting.setName(value);
-							this.plugin.saveSettings();
-						});
-				});
+                                .addText((text) => {
+                                        text.setValue(calendar.name)
+                                                .onChange((value) => {
+                                                        calendar.name = value;
+                                                        headerSetting.setName(value);
+                                                        this.plugin.saveSettings();
+                                                });
+                                        stopProp(text.inputEl);
+                                });
 
 			// Source type setting
 			new Setting(calendarContainer)
@@ -249,42 +255,45 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 
 			// YAML Key setting (only shown for YAML source type)
 			if (calendar.sourceType === 'yaml') {
-				new Setting(calendarContainer)
-					.setName('YAML Key')
-					.setDesc('The YAML frontmatter key to use for dates')
-					.addText((text) => {
-						text.setValue(calendar.yamlKey || '')
-							.onChange((value) => {
-								calendar.yamlKey = value;
-								this.plugin.saveSettings();
-							});
-					});
+                                new Setting(calendarContainer)
+                                        .setName('YAML Key')
+                                        .setDesc('The YAML frontmatter key to use for dates')
+                                        .addText((text) => {
+                                                text.setValue(calendar.yamlKey || '')
+                                                        .onChange((value) => {
+                                                                calendar.yamlKey = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                                stopProp(text.inputEl);
+                                        });
 			}
 
 			// Format setting
-			new Setting(calendarContainer)
-				.setName('Date Format')
-				.setDesc('The format of the date in the source')
-				.addText((text) => {
-					text.setValue(calendar.format)
-						.onChange((value) => {
-							calendar.format = value;
-							this.plugin.saveSettings();
-						});
-				});
+                        new Setting(calendarContainer)
+                                .setName('Date Format')
+                                .setDesc('The format of the date in the source')
+                                .addText((text) => {
+                                        text.setValue(calendar.format)
+                                                .onChange((value) => {
+                                                        calendar.format = value;
+                                                        this.plugin.saveSettings();
+                                                });
+                                        stopProp(text.inputEl);
+                                });
 
 			// Inline pattern setting (only shown for inline source type)
 			if (calendar.sourceType === 'inline') {
-				new Setting(calendarContainer)
-					.setName('Inline Pattern')
-					.setDesc('The regex pattern to match inline dates. Use parentheses to capture the date part.')
-					.addText((text) => {
-						text.setValue(calendar.inlinePattern || '')
-							.onChange((value) => {
-								calendar.inlinePattern = value;
-								this.plugin.saveSettings();
-							});
-					});
+                                new Setting(calendarContainer)
+                                        .setName('Inline Pattern')
+                                        .setDesc('The regex pattern to match inline dates. Use parentheses to capture the date part.')
+                                        .addText((text) => {
+                                                text.setValue(calendar.inlinePattern || '')
+                                                        .onChange((value) => {
+                                                                calendar.inlinePattern = value;
+                                                                this.plugin.saveSettings();
+                                                        });
+                                                stopProp(text.inputEl);
+                                        });
 
 				// Test pattern field
                                 new Setting(calendarContainer)
@@ -296,6 +305,7 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                                 calendar.testPattern = value;
                                                                 this.plugin.saveSettings();
                                                         });
+                                                stopProp(text.inputEl);
                                         });
 
                                 let whitelistInput: HTMLTextAreaElement;
@@ -310,6 +320,7 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
                                                         });
                                                 text.inputEl.rows = 3;
                                                 whitelistInput = text.inputEl;
+                                                stopProp(text.inputEl);
                                         });
 
                                 whitelistSetting.addButton((btn) => {
@@ -493,17 +504,18 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 			}
 
 			// Optional color setting
-			new Setting(calendarContainer)
-				.setName('Calendar Color')
-				.setDesc('Optional color for visual distinction (CSS color value, e.g., #ff0000, red)')
-				.addText((text) => {
-					text.setValue(calendar.color || '')
-						.onChange((value) => {
-							calendar.color = value;
-							this.plugin.saveSettings();
-							this.plugin.calendarForceUpdate();
-						});
-				});
+                        new Setting(calendarContainer)
+                                .setName('Calendar Color')
+                                .setDesc('Optional color for visual distinction (CSS color value, e.g., #ff0000, red)')
+                                .addText((text) => {
+                                        text.setValue(calendar.color || '')
+                                                .onChange((value) => {
+                                                        calendar.color = value;
+                                                        this.plugin.saveSettings();
+                                                        this.plugin.calendarForceUpdate();
+                                                });
+                                        stopProp(text.inputEl);
+                                });
 
 			// Add a separator
 			if (index < this.plugin.settings.calendars.length - 1) {
