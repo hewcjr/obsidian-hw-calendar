@@ -36,7 +36,8 @@ export const DEFAULT_SETTINGS: CalendarPluginSettings = {
 			sourceType: 'yaml',
 			format: 'YYYY-MM-DD hh:mm:ss',
 			yamlKey: 'created',
-			enabled: true
+			enabled: true,
+			color: '#87CEEB'
 		},
                 {
                         id: 'inline-timestamp',
@@ -45,7 +46,8 @@ export const DEFAULT_SETTINGS: CalendarPluginSettings = {
                         format: 'YYYYMMDDHHmm',
                         inlinePattern: '^-\\s+(\\d{12}):',
                         inlineWhitelist: '',
-                        enabled: true
+                        enabled: true,
+						color: '#00FF00'
                 }
         ]
 };
@@ -168,7 +170,8 @@ export class CalendarPluginSettingsTab extends PluginSettingTab {
 							sourceType: 'yaml',
 							format: 'YYYY-MM-DD',
 							yamlKey: 'date',
-							enabled: true
+							enabled: true,
+							color: '#FFFFFF'
 						};
 
 						// Add to settings

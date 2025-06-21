@@ -50,7 +50,7 @@ export interface CalendarConfig {
         inlinePattern?: string; // Only used when sourceType is 'inline'
         inlineWhitelist?: string; // Comma separated list of note paths for inline search
         notePath?: string; // Only used when sourceType is 'note-heading'
-        color?: string; // Optional color for visual distinction
+        color: string; // Optional color for visual distinction
         enabled: boolean;
         testPattern?: string; // Used for testing inline patterns
 }

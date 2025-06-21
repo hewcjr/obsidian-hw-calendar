@@ -250,7 +250,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                                                                 const info = selectedDayItems.getCalendarInfo(group.calendarId);
                                                                                 return (
                                                                                         <React.Fragment key={group.calendarId}>
-                                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ '--calendar-color': info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
+                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ color: info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
                                                                                                 {group.items.map(renderCalendarItem)}
                                                                                         </React.Fragment>
                                                                                 );
@@ -271,7 +271,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                                                 const info = selectedDayItems.getCalendarInfo(group.calendarId);
                                                                 return (
                                                                         <React.Fragment key={group.calendarId}>
-                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ '--calendar-color': info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
+                                                                                <div className="calendar-object-group-header" style={info?.color ? ({ color: info.color } as React.CSSProperties) : undefined}>{info ? info.name : group.calendarId}</div>
                                                                                 {group.items.map(renderCalendarItem)}
                                                                         </React.Fragment>
                                                                 );
