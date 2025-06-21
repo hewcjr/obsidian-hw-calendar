@@ -8,7 +8,7 @@ import CalendarPlugin from 'main';
 import { isMouseEvent, openFile } from '../util/utils';
 import { Menu, TFile } from 'obsidian';
 import { VIEW_TYPE } from 'view';
-import { CalendarNote, CalendarInlineTimestamp } from 'types';
+import { CalendarNote, CalendarInlineTimestamp, CalendarNoteHeading } from 'types';
 
 interface NoteListComponentParams {
 	selectedDay: Date;
@@ -64,12 +64,13 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 		// If a week is selected, get all items for the entire week
 		if (selectedWeek) {
 			// Create an array to hold items grouped by day
-			const weekDays: {
-				date: Date;
-				dayString: string;
-				notes: CalendarNote[];
-				inlineTimestamps: CalendarInlineTimestamp[]
-			}[] = [];
+                        const weekDays: {
+                                date: Date;
+                                dayString: string;
+                                notes: CalendarNote[];
+                                inlineTimestamps: CalendarInlineTimestamp[];
+                                headings: CalendarNoteHeading[];
+                        }[] = [];
 
 			// Get the start date of the week (the date passed from onClickWeekNumber)
 			const startDate = dayjs(selectedWeek.date);
@@ -78,19 +79,25 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 			for (let i = 0; i < 7; i++) {
 				const currentDate = startDate.add(i, 'day');
 				const currentDateIso = currentDate.format('YYYY-MM-DD');
-				let dayNotes: CalendarNote[] = [];
-				let dayInlineTimestamps: CalendarInlineTimestamp[] = [];
+                                let dayNotes: CalendarNote[] = [];
+                                let dayInlineTimestamps: CalendarInlineTimestamp[] = [];
+                                let dayHeadings: CalendarNoteHeading[] = [];
 
 				if (currentDateIso in plugin.CALENDAR_DAYS_STATE) {
-					// Get regular notes for this day
-					dayNotes = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
-						(calendarItem) => calendarItem.type === 'note'
-					) as CalendarNote[];
+                                        // Get regular notes for this day
+                                        dayNotes = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
+                                                (calendarItem) => calendarItem.type === 'note'
+                                        ) as CalendarNote[];
 
-					// Get inline timestamp entries for this day
-					dayInlineTimestamps = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
-						(calendarItem) => calendarItem.type === 'inline-timestamp'
-					) as CalendarInlineTimestamp[];
+                                        // Get inline timestamp entries for this day
+                                        dayInlineTimestamps = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
+                                                (calendarItem) => calendarItem.type === 'inline-timestamp'
+                                        ) as CalendarInlineTimestamp[];
+
+                                        // Get heading entries for this day
+                                        dayHeadings = plugin.CALENDAR_DAYS_STATE[currentDateIso].filter(
+                                                (calendarItem) => calendarItem.type === 'note-heading'
+                                        ) as CalendarNoteHeading[];
 
 					// Sort notes by display name
                                         dayNotes = dayNotes.sort((a, b) => {
@@ -99,23 +106,31 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                                         : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
                                         });
 
-					// Sort inline timestamps by display name
+                                        // Sort inline timestamps by display name
                                         dayInlineTimestamps = dayInlineTimestamps.sort((a, b) => {
                                                 return plugin.settings.sortingOption === 'name-rev'
                                                         ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
                                                         : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
                                         });
-				}
+
+                                        // Sort headings by display name
+                                        dayHeadings = dayHeadings.sort((a, b) => {
+                                                return plugin.settings.sortingOption === 'name-rev'
+                                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                                        });
+                                }
 
 				// Only add days that have items
-				if (dayNotes.length > 0 || dayInlineTimestamps.length > 0) {
-					weekDays.push({
-						date: currentDate.toDate(),
-						dayString: currentDate.format('ddd, DD MMM YYYY'),
-						notes: dayNotes,
-						inlineTimestamps: dayInlineTimestamps
-					});
-				}
+                                if (dayNotes.length > 0 || dayInlineTimestamps.length > 0 || dayHeadings.length > 0) {
+                                        weekDays.push({
+                                                date: currentDate.toDate(),
+                                                dayString: currentDate.format('ddd, DD MMM YYYY'),
+                                                notes: dayNotes,
+                                                inlineTimestamps: dayInlineTimestamps,
+                                                headings: dayHeadings
+                                        });
+                                }
 			}
 
 			// Get calendar information for each item
@@ -125,18 +140,20 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 			};
 
 			return {
-				isWeekView: true,
-				weekDays,
-				weekNumber: selectedWeek.weekNumber,
-				notes: [], // Empty for week view
-				inlineTimestamps: [], // Empty for week view
-				getCalendarInfo
-			};
+                                isWeekView: true,
+                                weekDays,
+                                weekNumber: selectedWeek.weekNumber,
+                                notes: [], // Empty for week view
+                                inlineTimestamps: [], // Empty for week view
+                                headings: [], // Empty for week view
+                                getCalendarInfo
+                        };
 		} else {
 			// Regular day view
 			const selectedDayIso = dayjs(selectedDay).format('YYYY-MM-DD');
-			let notes: CalendarNote[] = [];
-			let inlineTimestamps: CalendarInlineTimestamp[] = [];
+                        let notes: CalendarNote[] = [];
+                        let inlineTimestamps: CalendarInlineTimestamp[] = [];
+                        let headings: CalendarNoteHeading[] = [];
 
 			if (selectedDayIso in plugin.CALENDAR_DAYS_STATE) {
 				// Get regular notes
@@ -144,10 +161,15 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 					(calendarItem) => calendarItem.type === 'note'
 				) as CalendarNote[];
 
-				// Get inline timestamp entries
-				inlineTimestamps = plugin.CALENDAR_DAYS_STATE[selectedDayIso].filter(
-					(calendarItem) => calendarItem.type === 'inline-timestamp'
-				) as CalendarInlineTimestamp[];
+                                // Get inline timestamp entries
+                                inlineTimestamps = plugin.CALENDAR_DAYS_STATE[selectedDayIso].filter(
+                                        (calendarItem) => calendarItem.type === 'inline-timestamp'
+                                ) as CalendarInlineTimestamp[];
+
+                                // Get heading entries
+                                headings = plugin.CALENDAR_DAYS_STATE[selectedDayIso].filter(
+                                        (calendarItem) => calendarItem.type === 'note-heading'
+                                ) as CalendarNoteHeading[];
 			}
 
 			// Sort notes by display name
@@ -157,8 +179,14 @@ export default function NoteListComponent(params: NoteListComponentParams) {
                                         : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
                         });
 
-			// Sort inline timestamps by display name
+                        // Sort inline timestamps by display name
                         inlineTimestamps = inlineTimestamps.sort((a, b) => {
+                                return plugin.settings.sortingOption === 'name-rev'
+                                        ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
+                                        : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
+                        });
+
+                        headings = headings.sort((a, b) => {
                                 return plugin.settings.sortingOption === 'name-rev'
                                         ? b.displayName.localeCompare(a.displayName, 'en', { numeric: true })
                                         : a.displayName.localeCompare(b.displayName, 'en', { numeric: true });
@@ -170,7 +198,7 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 				return plugin.settings.calendars.find(cal => cal.id === calendarId);
 			};
 
-			return { isWeekView: false, notes, inlineTimestamps, getCalendarInfo };
+                        return { isWeekView: false, notes, inlineTimestamps, headings, getCalendarInfo };
 		}
 	}, [selectedDay, selectedWeek, forceValue, plugin.CALENDAR_DAYS_STATE, plugin.settings.sortingOption, plugin.settings.calendars]);
 
@@ -265,8 +293,11 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 										{day.dayString}
 									</div>
 
-									{/* Display regular notes for this day */}
-									{day.notes.map((note) => {
+                                                                        {/* Display regular notes for this day */}
+                                                                        {day.notes.length > 0 && (
+                                                                                <div className="calendar-object-group-header">Notes</div>
+                                                                        )}
+                                                                        {day.notes.map((note) => {
 										const calendarInfo = selectedDayItems.getCalendarInfo(note.calendarId);
 										return (
 											<div
@@ -295,35 +326,71 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 										);
 									})}
 
-									{/* Display inline timestamp entries for this day */}
-									{day.inlineTimestamps.map((item) => {
-										const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
-										return (
-											<div
-												className={
-													'calendar-note-line calendar-inline-timestamp' +
-													(plugin.settings.fileNameOverflowBehaviour == 'hide'
-														? ' calendar-overflow-hide'
-														: '')
-												}
-												id={`${item.path}-${item.lineNumber}`}
-												key={`${item.path}-${item.lineNumber}`}
-												data-calendar-id={item.calendarId}
-												style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
-												onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
-												onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
-												<HiOutlineDocumentText className="calendar-note-line-icon" />
-												<span>
-													{calendarInfo && (
-														<span className="calendar-item-label" title={calendarInfo.name}>
-															{calendarInfo.name}:
-														</span>
-													)}
-													{item.displayName}
-												</span>
-											</div>
-										);
-									})}
+                                                                        {/* Display inline timestamp entries for this day */}
+                                                                        {day.inlineTimestamps.length > 0 && (
+                                                                                <div className="calendar-object-group-header">Inline</div>
+                                                                        )}
+                                                                        {day.inlineTimestamps.map((item) => {
+                                                                                const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
+                                                                                return (
+                                                                                        <div
+                                                                                                className={
+                                                                                                        'calendar-note-line calendar-inline-timestamp' +
+                                                                                                        (plugin.settings.fileNameOverflowBehaviour == 'hide'
+                                                                                                                ? ' calendar-overflow-hide'
+                                                                                                                : '')
+                                                                                                }
+                                                                                                id={`${item.path}-${item.lineNumber}`}
+                                                                                                key={`${item.path}-${item.lineNumber}`}
+                                                                                                data-calendar-id={item.calendarId}
+                                                                                                style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
+                                                                                                onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
+                                                                                                onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
+                                                                                                <HiOutlineDocumentText className="calendar-note-line-icon" />
+                                                                                                <span>
+                                                                                                        {calendarInfo && (
+                                                                                                                <span className="calendar-item-label" title={calendarInfo.name}>
+                                                                                                                        {calendarInfo.name}:
+                                                                                                                </span>
+                                                                                                        )}
+                                                                                                        {item.displayName}
+                                                                                                </span>
+                                                                                        </div>
+                                                                                );
+                                                                        })}
+
+                                                                        {/* Display heading entries for this day */}
+                                                                        {day.headings.length > 0 && (
+                                                                                <div className="calendar-object-group-header">Note Heading</div>
+                                                                        )}
+                                                                        {day.headings.map((item) => {
+                                                                                const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
+                                                                                return (
+                                                                                        <div
+                                                                                                className={
+                                                                                                        'calendar-note-line calendar-note-heading' +
+                                                                                                        (plugin.settings.fileNameOverflowBehaviour == 'hide'
+                                                                                                                ? ' calendar-overflow-hide'
+                                                                                                                : '')
+                                                                                                }
+                                                                                                id={`${item.path}-${item.lineNumber}`}
+                                                                                                key={`${item.path}-${item.lineNumber}`}
+                                                                                                data-calendar-id={item.calendarId}
+                                                                                                style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
+                                                                                                onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
+                                                                                                onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
+                                                                                                <HiOutlineDocumentText className="calendar-note-line-icon" />
+                                                                                                <span>
+                                                                                                        {calendarInfo && (
+                                                                                                                <span className="calendar-item-label" title={calendarInfo.name}>
+                                                                                                                        {calendarInfo.name}:
+                                                                                                                </span>
+                                                                                                        )}
+                                                                                                        {item.displayName}
+                                                                                                </span>
+                                                                                        </div>
+                                                                                );
+                                                                        })}
 								</div>
 							))
 						)}
@@ -338,10 +405,11 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 							</div>
 						)}
 
-						{/* Display regular notes */}
-						{selectedDayItems.notes.length > 0 && (
-							<>
-								{selectedDayItems.notes.map((note) => {
+                                                {/* Display regular notes */}
+                                                {selectedDayItems.notes.length > 0 && (
+                                                        <>
+                                                                <div className="calendar-object-group-header">Notes</div>
+                                                                {selectedDayItems.notes.map((note) => {
 									const calendarInfo = selectedDayItems.getCalendarInfo(note.calendarId);
 									return (
 										<div
@@ -372,15 +440,16 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 							</>
 						)}
 
-						{/* Display inline timestamp entries */}
-						{selectedDayItems.inlineTimestamps.length > 0 && (
-							<>
-								{selectedDayItems.inlineTimestamps.map((item) => {
-									const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
-									return (
-										<div
-											className={
-												'calendar-note-line calendar-inline-timestamp' +
+                                                {/* Display inline timestamp entries */}
+                                                {selectedDayItems.inlineTimestamps.length > 0 && (
+                                                        <>
+                                                                <div className="calendar-object-group-header">Inline</div>
+                                                                {selectedDayItems.inlineTimestamps.map((item) => {
+                                                                        const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
+                                                                        return (
+                                                                                <div
+                                                                                        className={
+                                                                                                'calendar-note-line calendar-inline-timestamp' +
 												(plugin.settings.fileNameOverflowBehaviour == 'hide'
 													? ' calendar-overflow-hide'
 													: '')
@@ -401,10 +470,45 @@ export default function NoteListComponent(params: NoteListComponentParams) {
 												{item.displayName}
 											</span>
 										</div>
-									);
-								})}
-							</>
-						)}
+                                                                                );
+                                                                })}
+                                                        </>
+                                                )}
+
+                                                {/* Display heading entries */}
+                                                {selectedDayItems.headings.length > 0 && (
+                                                        <>
+                                                                <div className="calendar-object-group-header">Note Heading</div>
+                                                                {selectedDayItems.headings.map((item) => {
+                                                                        const calendarInfo = selectedDayItems.getCalendarInfo(item.calendarId);
+                                                                        return (
+                                                                                <div
+                                                                                        className={
+                                                                                                'calendar-note-line calendar-note-heading' +
+                                                                                                (plugin.settings.fileNameOverflowBehaviour == 'hide'
+                                                                                                        ? ' calendar-overflow-hide'
+                                                                                                        : '')
+                                                                                        }
+                                                                                        id={`${item.path}-${item.lineNumber}`}
+                                                                                        key={`${item.path}-${item.lineNumber}`}
+                                                                                        data-calendar-id={item.calendarId}
+                                                                                        style={calendarInfo?.color ? { '--calendar-color': calendarInfo.color } as React.CSSProperties : undefined}
+                                                                                        onClick={(e) => openFilePath(e, item.path, item.lineNumber)}
+                                                                                        onContextMenu={(e) => triggerFileContextMenu(e, item.path)}>
+                                                                                        <HiOutlineDocumentText className="calendar-note-line-icon" />
+                                                                                        <span>
+                                                                                                {calendarInfo && (
+                                                                                                        <span className="calendar-item-label" title={calendarInfo.name}>
+                                                                                                                {calendarInfo.name}:
+                                                                                                        </span>
+                                                                                                )}
+                                                                                                {item.displayName}
+                                                                                        </span>
+                                                                                </div>
+                                                                        );
+                                                                })}
+                                                        </>
+                                                )}
 					</>
 				)}
 			</div>
